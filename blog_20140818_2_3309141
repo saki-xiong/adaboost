@@ -1,0 +1,22 @@
+# 基于单层决策树的adaboost训练过程
+def adaBoostTrainDS(dataArr, classLabels, numIt = 40):
+    weakClassArr = []
+    m = shape(dataArr)[0]
+    D = mat(ones((m,1))/m)
+    aggClassEst = mat(zeros((m,1)))
+    for i in range(numIt):
+        bestStump, error, classEst = buildStump(dataArr, classLabels, D)
+       # print "D:", D.T
+        alpha = float(0.5 * log((1.0 - error)/max(error, 1e-16)))   #确保在没有错误时不会发生除零溢出
+        bestStump['alpha'] = alpha
+        weakClassArr.append(bestStump)
+        #print "classEst:", classEst.T
+        expon = multiply(-1 * alpha * mat(classLabels).T, classEst)    #乘法用于区分是否正确或者错误样本
+        D = multiply(D, exp(expon))
+        D = D/D.sum()            # 归一化用的
+        aggClassEst += alpha * classEst    #累加变成强分类器
+        aggErrors = multiply(sign(aggClassEst) != mat(classLabels).T, ones((m,1)))
+        errorRate = aggErrors.sum()/m
+        print "total error: ", errorRate, "\n"
+        if errorRate == 0.0: break
+    return weakClassArr, aggClassEst
